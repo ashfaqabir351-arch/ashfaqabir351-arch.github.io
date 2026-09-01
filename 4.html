@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>For My Beautiful Mom 💖</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #a18cd1, #fbc2eb);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .card {
+            background: white;
+            padding: 50px;
+            border-radius: 25px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+            max-width: 600px;
+            animation: zoomIn 1.5s ease-in-out;
+        }
+
+        h1 {
+            color: #ff4081;
+            font-size: 35px;
+        }
+
+        p {
+            font-size: 20px;
+            color: #555;
+            margin-top: 20px;
+            line-height: 1.6;
+        }
+
+        @keyframes zoomIn {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .back-btn {
+            margin-top: 30px;
+            padding: 12px 25px;
+            font-size: 16px;
+            border: none;
+            border-radius: 30px;
+            background: #ff4081;
+            color: white;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .back-btn:hover {
+            background: #e91e63;
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>💖 Happy Birthday Mom 💖</h1>
+    <p>
+        Dear Mom,<br><br>
+        You are my first friend, my best friend, and my forever friend.  
+        Thank you for your endless love, care, and sacrifices.  
+        I am so lucky to have you in my life.  
+        May your day be filled with happiness, laughter, and love! 🎂✨<br><br>
+        I love you so much! 💕
+    </p>
+
+    <button class="back-btn" onclick="goBack()">Go Back 🎀</button>
+</div>
+
+<script>
+    function goBack() {
+        window.location.href = "index.html";
+    }
+</script>
+
+</body>
+</html>
