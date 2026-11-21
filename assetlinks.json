@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.github.ashfaqabir351_arch.twa",
+      "sha256_cert_fingerprints": [
+        "F4:56:DA:2C:01:6E:5F:3B:E6:2F:64:B6:99:E4:F7:87:4D:E0:6E:76:1D:70:74:78:60:6C:7A:BB:D1:9F:C4:DD"
+      ]
+    }
+  }
+]

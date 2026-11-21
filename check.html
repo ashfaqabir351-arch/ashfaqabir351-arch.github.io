@@ -1,0 +1,23 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>assetlinks.json checker</title>
+<style>body{font:16px/1.5 system-ui,sans-serif;max-width:680px;margin:0 auto;padding:16px;background:#f6f7fb;color:#1b1f2a}@media(prefers-color-scheme:dark){body{background:#12141c;color:#eceef5}}
+.c{border:1px solid #8884;border-radius:12px;padding:12px;margin:10px 0}.ok{color:#16a34a}.no{color:#dc2626}input{width:100%;padding:8px;margin:4px 0 10px;box-sizing:border-box}code{word-break:break-all}</style></head><body>
+<h1>assetlinks.json checker</h1><p>Checks that the file is public on this site and matches your app. It cannot prove Android's own verification, but a failure here explains the address bar.</p>
+<label>Package ID</label><input id="p" value="io.github.ashfaqabir351_arch.twa">
+<label>SHA-256 fingerprint</label><input id="f" value="F4:56:DA:2C:01:6E:5F:3B:E6:2F:64:B6:99:E4:F7:87:4D:E0:6E:76:1D:70:74:78:60:6C:7A:BB:D1:9F:C4:DD">
+<button onclick="run()">Check now</button><div id="o"></div>
+<script>
+async function run(){const o=document.getElementById("o");o.innerHTML="";const add=(t,ok)=>o.insertAdjacentHTML("beforeend",`<div class="c ${ok?"ok":"no"}">${ok?"✅":"❌"} ${t}</div>`);
+const url=location.origin+"/.well-known/assetlinks.json";
+let r;try{r=await fetch(url,{cache:"no-store"})}catch(e){return add("Could not reach <code>"+url+"</code>. Check your internet connection.",false)}
+if(!r.ok)return add("File not found (HTTP "+r.status+") at <code>"+url+"</code>. The file must be inside a folder named <b>.well-known</b> in the root of the site.",false);
+if(r.redirected)add("The address redirects. Android needs a direct 200 response with no redirect.",false);else add("File is public at <code>"+url+"</code>.",true);
+let j;try{j=await r.json()}catch(e){return add("The file is not valid JSON. Check commas, brackets and quotation marks.",false)}
+add("File is valid JSON.",true);
+const p=document.getElementById("p").value.trim(),f=document.getElementById("f").value.trim().toUpperCase();
+const e=(Array.isArray(j)?j:[]).find(x=>x&&x.target&&x.target.package_name===p);
+if(!e)return add("No entry for Package ID <code>"+p+"</code>. Found: "+(Array.isArray(j)?j.map(x=>x.target&&x.target.package_name).join(", "):"none"),false);
+add("Package ID found.",true);
+const fp=(e.target.sha256_cert_fingerprints||[]).map(x=>String(x).trim().toUpperCase());
+add(fp.includes(f)?"Fingerprint matches.":"Fingerprint does NOT match the one you typed. File has: <code>"+fp.join(", ")+"</code>",fp.includes(f));
+if(!(e.relation||[]).includes("delegate_permission/common.handle_all_urls"))add("Relation <code>delegate_permission/common.handle_all_urls</code> is missing.",false)}
+</script></body></html>
