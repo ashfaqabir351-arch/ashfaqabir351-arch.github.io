@@ -346,6 +346,17 @@ A.innerHTML=`<h1>Manage Questions</h1><div class="card"><div class="row"><div><l
 function del(k){if(!confirm("Remove this question?"))return;if(k[0]=="b")(H.hid=H.hid||[]).push(k);else U.splice(+k.slice(1),1);save();manage()}
 function prog(){const l=H.log||[];A.innerHTML=`<h1>My Progress</h1>${l.length?l.map(r=>`<div class="card bar"><span>${r.t} <span class="mu">· ${r.d}</span></span><b>${r.sc}/${r.n}</b></div>`).join(""):`<div class="card">No exams taken yet.</div>`}<button class="btn" onclick="home()">← Back</button>`}
 home();
+let hs=false,skip=false;
+function pushH(){if(!hs){try{history.pushState({a:1},"");hs=true}catch(e){}}}
+const H0=home;
+home=function(){if(hs){hs=false;skip=true;try{history.back()}catch(e){}setTimeout(()=>{if(skip){skip=false;H0()}},300);return}return H0.apply(this,arguments)};
+["go","importUI","manage","addQ","prog"].forEach(n=>{const f=window[n];if(typeof f=="function")window[n]=function(){pushH();return f.apply(this,arguments)}});
+addEventListener("popstate",()=>{
+if(skip){skip=false;hs=false;clearInterval(T);H0();return}
+hs=false;
+const z=document.querySelector(".zm");if(z){z.remove();pushH();return}
+if(E&&!E.done&&!E.inst&&E.left&&!confirm("Leave this exam? Your progress will be lost.")){pushH();return}
+clearInterval(T);H0()});
 try{const t=localStorage.getItem("th");if(t)document.documentElement.dataset.theme=t}catch(e){}
 function theme(){const r=document.documentElement,c=r.dataset.theme||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"),n=c=="dark"?"light":"dark";r.dataset.theme=n;try{localStorage.setItem("th",n)}catch(e){}}
 </script>
