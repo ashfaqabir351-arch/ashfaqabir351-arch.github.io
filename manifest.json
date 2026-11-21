@@ -1,6 +1,6 @@
 {
   "name": "HSC Science Study App",
-  "short_name": "HSC Study",
+  "short_name": "BSC Study",
   "description": "MCQ, CQ, board questions, timed exams and mock tests for HSC science students",
   "start_url": "/",
   "scope": "/",
