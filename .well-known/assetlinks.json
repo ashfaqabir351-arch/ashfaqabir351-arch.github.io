@@ -1,8 +1,12 @@
-[{
-      "relation": ["delegate_permission/common.handle_all_urls"],
-      "target": {
-        "namespace": "android_app",
-        "package_name": "io.github.ashfaqabir351_arch.twa",
-        "sha256_cert_fingerprints": ["4D:89:5A:F2:12:D2:66:B7:81:26:4A:76:E7:26:91:A0:2A:8E:39:AD:66:47:40:0A:BF:76:9C:7F:3D:FF:88:52"]
-      }
-    }]
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.github.ashfaqabir351_arch.twa",
+      "sha256_cert_fingerprints": [
+        "4D:89:5A:F2:12:D2:66:B7:81:26:4A:76:E7:26:91:A0:2A:8E:39:AD:66:47:40:0A:BF:76:9C:7F:3D:FF:88:52"
+      ]
+    }
+  }
+]
