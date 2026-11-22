@@ -107,7 +107,7 @@ h2{display:flex;align-items:center;gap:10px;font-size:17px;margin:22px 0 10px}
 .zm{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:200;display:grid;place-items:center;padding:16px;cursor:zoom-out}.zm img{max-width:100%;max-height:100%;border-radius:12px}
 .up{display:inline-block;cursor:pointer;text-align:center}
 .c9{background:linear-gradient(135deg,#f5d0fe,#a855f7)}
-</style><script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script></head><body><div class="w" id="app"></div><button id="ib" class="btn" style="display:none;position:fixed;left:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:60">⬇️ Install app</button>
+</style><script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script><script src="config.js"></script></head><body><div class="w" id="app"></div><button id="ib" class="btn" style="display:none;position:fixed;left:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));z-index:60">⬇️ Install app</button>
 <div class="wm">Made by <b>Ashfaq</b></div>
 <script>
 const SUBS=[["bn","Bangla"],["en","English"],["ict","ICT"],["hm1","Higher Math 1st Paper"],["hm2","Higher Math 2nd Paper"],["bio1","Biology 1st Paper"],["bio2","Biology 2nd Paper"],["chem1","Chemistry 1st Paper"],["chem2","Chemistry 2nd Paper"],["phy1","Physics 1st Paper"],["phy2","Physics 2nd Paper"]];
@@ -248,14 +248,19 @@ document.addEventListener("paste",e=>{if(!$("aiq"))return;const fs=[...(e.clipbo
 const norm=(x,i)=>x.t=="cq"?{t:"cq",n:i+1,st:String(x.st||""),p:[0,1,2,3].map(k=>{const y=(x.p||[])[k]||[];return[String(y[0]||""),+y[1]||k+1,String(y[2]||"")]}),ai:1,guess:!!x.guess,fig:!!x.fig}:{t:"mcq",n:i+1,q:String(x.q||""),o:[0,1,2,3].map(k=>String((x.o||[])[k]||"")),a:Number.isInteger(x.a)&&x.a>=0&&x.a<4?x.a:-1,ai:1,guess:!!x.guess,fig:!!x.fig};
 const GK=()=>{try{return localStorage.getItem("gk")||""}catch(e){return""}};
 const GM=()=>{try{return localStorage.getItem("gm")||"gemini-2.5-flash"}catch(e){return"gemini-2.5-flash"}};
-function ensureKey(){if(GK())return true;const k=prompt("Paste your Google AI Studio API key (it is saved only on this device):");if(!k||!k.trim())return false;try{localStorage.setItem("gk",k.trim())}catch(e){}return true}
-async function gem(prompt,imgs,signal){
+function ensureKey(){if(window.AI_PROXY||GK())return true;const k=prompt("Paste your Google AI Studio API key (it is saved only on this device):");if(!k||!k.trim())return false;try{localStorage.setItem("gk",k.trim())}catch(e){}return true}
+async function gemProxy(prompt,imgs,signal){
+const r=await fetch(window.AI_PROXY,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt,images:imgs}),signal});
+if(!r.ok){let m="";try{m=(await r.json()).error}catch(e){}throw{code:r.status==429?"proxylimit":"http",message:m}}
+const t=((await r.json()).text||"");
+try{return JSON.parse(t.replace(/^\s*```(?:json)?/i,"").replace(/```\s*$/,"").trim())}catch(e){throw{code:"json"}}}
+async function gem(prompt,imgs,signal){if(window.AI_PROXY)return gemProxy(prompt,imgs,signal);
 const parts=[{text:prompt},...imgs.map(d=>({inlineData:{mimeType:"image/jpeg",data:d.split(",")[1]}}))];
 const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/"+encodeURIComponent(GM())+":generateContent",{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":GK()},body:JSON.stringify({contents:[{role:"user",parts}],generationConfig:{responseMimeType:"application/json",temperature:0.1}}),signal});
 if(!r.ok){let m="";try{m=(await r.json()).error.message}catch(e){}throw{code:r.status==429?"rate":(r.status==401||r.status==403||/API key/i.test(m))?"auth":r.status==404?"model":"http",message:m}}
 const j=await r.json(),t=((j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts)||[]).map(p=>p.text||"").join("");
 try{return JSON.parse(t.replace(/^\s*```(?:json)?/i,"").replace(/```\s*$/,"").trim())}catch(e){throw{code:"json"}}}
-const aiErr=e=>e&&e.name=="AbortError"?"Stopped.":e&&e.code=="auth"?"Google AI rejected the API key. Check it in the ⚙️ settings. "+(e.message||""):e&&e.code=="model"?"Model not found. Change the model name in the ⚙️ settings.":e&&e.code=="rate"?"Free usage limit reached. Wait a minute and try again.":e&&e.code=="json"?"Couldn't read the AI reply. Please try again.":e instanceof TypeError?"No internet connection.":"Something went wrong. "+((e&&e.message)||"");
+const aiErr=e=>e&&e.name=="AbortError"?"Stopped.":e&&e.code=="proxylimit"?(e.message||"The daily AI limit is used up. Try again tomorrow."):e&&e.code=="auth"?"Google AI rejected the API key. Check it in the ⚙️ settings. "+(e.message||""):e&&e.code=="model"?"Model not found. Change the model name in the ⚙️ settings.":e&&e.code=="rate"?"Free usage limit reached. Wait a minute and try again.":e&&e.code=="json"?"Couldn't read the AI reply. Please try again.":e instanceof TypeError?"No internet connection.":"Something went wrong. "+((e&&e.message)||"");
 function aiPrompt(txt,ty,gs){return `You are extracting exam questions for Bangladesh HSC (Class XI-XII science) students.
 Read the attached image(s) and/or the text below and extract EVERY question.
 Question type: ${ty=="auto"?"detect each question's type (MCQ or CQ creative question)":ty.toUpperCase()}.
@@ -276,7 +281,7 @@ try{const ch=QI.length?Array.from({length:Math.ceil(QI.length/6)},(_,k)=>QI.slic
 for(let k=0;k<ch.length;k++){st.textContent="⏳ Google AI is reading"+(ch.length>1?" (part "+(k+1)+" of "+ch.length+")":"")+"… please wait.";const r=await gem(P,ch[k].map(x=>x.u),aiCtl.signal);all.push(...(Array.isArray(r)?r:(r&&r.questions)||[]))}
 PV=all.filter(x=>x&&(x.q||x.st)).map(norm);if(!PV.length){st.textContent="No questions were found. Try a clearer photo.";return}
 st.textContent="✅ Done — check the preview below.";renderPV(0);$("ipv").scrollIntoView({behavior:"smooth"})}
-catch(e){st.textContent="⚠️ "+aiErr(e)}
+catch(e){st.textContent="⚠️ "+aiErr(e);if(QI.length&&LIM(e)){const o=await ocrRun(QI.map(x=>x.u),$("itx"),st);st.textContent=o?"✅ The AI limit was reached, so the free text reader was used. Check the text in the box below, then press “Convert text”.":"⚠️ "+aiErr(e)}}
 finally{$("aistop").style.display="none"}}
 async function aqAI(){const st=$("aqst"),ty=$("at").value,tb=ty=="cq"?$("st"):$("aq"),txt=tb.value.trim();
 if(!AT.length&&!txt)return alert("Attach a photo or PDF first (Upload, Camera or Paste image), or type some text.");
@@ -289,10 +294,10 @@ const q=norm(L[0],0);$("at").value=q.t;$("mf").style.display=q.t=="mcq"?"block":
 if(q.t=="mcq"){$("aq").value=q.q;q.o.forEach((o,i)=>$("o"+i).value=o);$("ak").value=q.a>=0?q.a:0}
 else{$("st").value=q.st;q.p.forEach((x,i)=>{$("pq"+i).value=x[0];$("pm"+i).value=x[1];$("pa"+i).value=x[2]});$("cf").dispatchEvent(new Event("input",{bubbles:true}))}
 st.textContent="✅ Filled in — check everything"+(q.t=="mcq"&&q.a<0?", and choose the correct answer":"")+", then press Save."}
-catch(e){st.textContent="⚠️ "+aiErr(e)}}
+catch(e){st.textContent="⚠️ "+aiErr(e);if(AT.length&&LIM(e)){const o=await ocrRun(AT.map(a=>a.h||a.d),$("xt"),st);st.textContent=o?"✅ The AI limit was reached, so the free text reader was used. Check the text in the “Text → Question” box, then press “Make question”.":"⚠️ "+aiErr(e)}}}
 
 function autoT(b){const p=opts(b);if(!p)return"mcq";const L=[0,1,2,3].map(k=>b.slice(p[k].index+p[k][0].length,k<3?p[k+1].index:undefined).trim().length);return Math.max(...L)>90||/[\[\(]\s*[0-9০-৯]{1,2}\s*[\]\)]\s*$/.test(b.trim())?"cq":"mcq"}
-function imParse(){let t=$("itx").value;if(!t.trim())return alert("Paste text or upload a file first.");let kt=$("ikey").value;const h=t.match(KH);if(h){kt=t.slice(h.index+h[0].length)+"\n"+kt;t=t.slice(0,h.index)}const km=keyMap(kt),ty=$("ist").value;PV=splitQ(t).filter(x=>x.b).map(x=>{const q=ty=="cq"||(ty=="auto"&&autoT(x.b)=="cq")?parseCQ(x.b):parseMCQ(x.b);q.n=x.n;if(q.t=="mcq"&&km[x.n]!==undefined)q.a=km[x.n];return q});renderPV(PV.filter(q=>q.t=="mcq"&&km[q.n]!==undefined).length);$("ipv").scrollIntoView({behavior:"smooth"})}
+function imParse(){let t=$("itx").value;if(!t.trim())return alert("Paste text or upload a file first.");let kt=$("ikey").value;const h=t.match(KH);if(h){kt=t.slice(h.index+h[0].length)+"\n"+kt;t=t.slice(0,h.index)}const km=keyMap(kt),ty=$("ist").value;PV=smartSplit(t).map(x=>{const q=ty=="cq"||(ty=="auto"&&autoT(x.b)=="cq")?parseCQ(x.b):parseMCQ(x.b);q.n=x.n;if(q.t=="mcq"&&km[x.n]!==undefined)q.a=km[x.n];return q});renderPV(PV.filter(q=>q.t=="mcq"&&km[q.n]!==undefined).length);$("ipv").scrollIntoView({behavior:"smooth"})}
 function renderPV(hit){const ok=q=>q.t=="mcq"?q.q&&q.o.every(x=>x)&&q.a>=0:q.st&&q.p.every(x=>x[0]),g=PV.filter(ok).length,L=["ক","খ","গ","ঘ"];$("ipv").innerHTML=`<h2>Preview — ${PV.length} detected</h2><div class="mu">✅ ${g} ready · ⚠️ ${PV.length-g} need attention${hit?` · 🔑 ${hit} answers matched from the key`:""}</div>`+PV.map((q,i)=>`<div class="card" style="${ok(q)?"":"border-color:#f59e0b"}"><label class="gt" style="color:var(--tx)"><input type="checkbox" id="imi${i}" checked> Include question ${q.n} <span class="tag" style="margin-left:6px">${q.t.toUpperCase()}</span>${q.ai?`<span class="tag">🤖 AI-read</span>`:""}</label>${q.guess?`<div class="mu" style="color:#d97706">⚠️ AI-suggested answer — please verify before saving.</div>`:""}${ok(q)||q.guess?"":`<div class="mu" style="color:#d97706">⚠️ ${q.t=="mcq"&&q.o.some(x=>!x)?"Options not fully detected — fill them in below.":"Please check the highlighted fields."}</div>`}${q.fig?`<label class="gt" style="color:var(--tx)"><input type="checkbox" id="imf${i}" checked> 📎 Attach the uploaded image (this question has a figure)</label>`:""}`+(q.t=="mcq"?`<textarea id="imq${i}" rows="2">${esc(q.q)}</textarea>${q.o.map((o,j)=>`<input id="imo${i}_${j}" value="${esc(o)}" placeholder="Option ${"ABCD"[j]}">`).join("")}<label>Correct answer</label><select id="ima${i}"><option value="-1">— choose —</option>${[0,1,2,3].map(j=>`<option value="${j}" ${q.a==j?"selected":""}>${"ABCD"[j]}</option>`).join("")}</select>`:`<label>Stem</label><textarea id="ims${i}" rows="3">${esc(q.st)}</textarea>${q.p.map((x,j)=>`<div class="row"><div style="flex:3"><label>${L[j]}) question</label><input id="imp${i}_${j}" value="${esc(x[0])}"></div><div><label>Marks</label><input id="imk${i}_${j}" type="number" min="0" step="0.5" value="${x[1]}"></div></div><input id="imr${i}_${j}" value="${esc(x[2])}" placeholder="Model answer (optional)">`).join("")}`)+`</div>`).join("")+`<button class="btn" onclick="imSave()">Save questions</button>`}
 async function imSave(){const out=[],bad=[],L=["ক","খ","গ","ঘ"];for(let i=0;i<PV.length;i++){const q=PV[i];if(!$("imi"+i).checked)continue;const o={s:$("isb").value,t:q.t,c:$("isc").value,b:$("isd").value.trim()||"Imported",f:[]};
 if(q.t=="mcq"){o.q=$("imq"+i).value.trim();o.o=[0,1,2,3].map(j=>$(`imo${i}_${j}`).value.trim());o.a=+$("ima"+i).value;if(!o.q||o.o.some(x=>!x)||o.a<0){bad.push(q.n);continue}}
@@ -371,10 +376,42 @@ if(q.t=="mcq"){$("aq").value=q.q;q.o.forEach((o,i)=>$("o"+i).value=o);$("ak").va
 else{$("st").value=q.st;q.p.forEach((x,i)=>{$("pq"+i).value=x[0];$("pm"+i).value=x[1];$("pa"+i).value=x[2]});$("cf").dispatchEvent(new Event("input",{bubbles:true}))}}
 function xtMake(){const st=$("xst");let tx=$("xt").value.trim();if(!tx)return alert("Extract or paste some text first.");
 const ty=$("at").value;let kt="";const h=tx.match(KH);if(h){kt=tx.slice(h.index+h[0].length);tx=tx.slice(0,h.index)}const km=keyMap(kt);
-const L=splitQ(tx).filter(x=>x.b).map(x=>{const q=ty=="cq"?parseCQ(x.b):parseMCQ(x.b);q.n=x.n;if(q.t=="mcq"&&km[x.n]!==undefined)q.a=km[x.n];return q});
+const L=smartSplit(tx).map(x=>{const q=ty=="cq"?parseCQ(x.b):parseMCQ(x.b);q.n=x.n;if(q.t=="mcq"&&km[x.n]!==undefined)q.a=km[x.n];return q});
 if(!L.length){st.textContent="Couldn't find a question in this text.";return}
 if(L.length>1){PV=L;const s=$("as").value,c=$("ac").value,b=$("ab").value;QI=AT.map(a=>({u:a.d}));importUI();$("isb").value=s;$("isc").value=c;$("isd").value=b;$("aist").textContent="✅ "+L.length+" questions found in your text — review and save.";renderPV(0);return}
 fillQ(L[0]);const q=L[0];st.textContent="✅ Question filled in above. Check it"+(q.t=="mcq"&&q.a<0?", choose the correct answer":"")+", then press Save."}
+const LIM=e=>/^(proxylimit|rate|http)$/.test((e&&e.code)||"");
+async function ocrRun(list,ta,st){try{st.textContent="⏳ Loading the free text reader (first time needs internet)…";await loadTess();const w=await Tesseract.createWorker(["ben","eng"],1,{logger:m=>{if(m.status&&m.progress!==undefined)st.textContent="⏳ "+m.status+" "+Math.round(m.progress*100)+"%"}});let out="";for(let i=0;i<list.length;i++){st.textContent="⏳ Reading image "+(i+1)+" of "+list.length+"…";const r=await w.recognize(list[i]);out+=(out?"\n":"")+r.data.text.trim()}await w.terminate();if(out.trim())ta.value=(ta.value?ta.value+"\n":"")+out;return out.trim()}catch(x){return ""}}
+const MK=/(?:^|\s)[\(\[]?([A-Da-dকখগঘ])[.)\]।:]\s*/g;
+function opts(b){let need=0;const pos=[];for(const m of b.matchAll(MK)){if(LI(m[1])==need){pos.push(m);if(++need==4)break}}return pos.length==4?pos:null}
+const stripM=s=>s.replace(/^(?:[\(\[]?[A-Da-d][.)\]।:]|[\(\[]?[কখগঘ][.)\]।:]?)\s*/,"").trim();
+function parseMCQ(b){let a=-1;const am=b.match(AR2);if(am){a=LI(am[1]);b=b.slice(0,am.index).replace(/[\[\(]\s*$/,"")+" "+b.slice(am.index+am[0].length).replace(/^\s*[\]\)]/,"")}
+const p=opts(b);
+if(!p){const ls=b.split("\n").map(x=>x.trim()).filter(Boolean);if(ls.length>=5)return{t:"mcq",q:flat(ls.slice(0,-4).join(" ")),o:ls.slice(-4).map(stripM),a};return{t:"mcq",q:flat(b),o:["","","",""],a}}
+const g=k=>flat(b.slice(p[k].index+p[k][0].length,k<3?p[k+1].index:undefined));
+return{t:"mcq",q:flat(b.slice(0,p[0].index)),o:[0,1,2,3].map(g),a}}
+const NUMRE=/^\s*(?:Q(?:uestion)?\.?\s*|প্রশ্ন\s*[:.-]?\s*)?[0-9০-৯]{1,3}\s*[.)।:]\s*/;
+function splitRuns(t){const runs=[];let need=0,cur=[];
+for(const m of t.matchAll(MK)){const k=LI(m[1]);if(k==0){cur=[m];need=1}else if(cur.length&&k==need){cur.push(m);if(++need==4){runs.push(cur);cur=[];need=0}}}
+if(runs.length<2)return[];const out=[];let start=0;
+runs.forEach((r,i)=>{const d=r[3];let e=t.indexOf("\n",d.index+d[0].length);if(e<0)e=t.length;out.push({n:i+1,b:t.slice(start,e).trim().replace(NUMRE,"")});start=e});
+return out}
+function smartSplit(t){const a=splitQ(t).filter(x=>x.b);if(a.length>1)return a;const r=splitRuns(t);if(r.length>1)return r;return a.length?a:[{n:1,b:t.trim()}]}
+function ocrPrep(src){return new Promise(r=>{const i=new Image();i.onload=()=>{const L=Math.max(i.width,i.height),k=L>3200?3200/L:Math.min(2.5,Math.max(1,2400/L)),c=document.createElement("canvas");c.width=Math.round(i.width*k);c.height=Math.round(i.height*k);const x=c.getContext("2d");x.imageSmoothingQuality="high";x.drawImage(i,0,0,c.width,c.height);
+const d=x.getImageData(0,0,c.width,c.height),p=d.data;let lo=255,hi=0;for(let j=0;j<p.length;j+=4){const g=.299*p[j]+.587*p[j+1]+.114*p[j+2];p[j]=p[j+1]=p[j+2]=g;if(g<lo)lo=g;if(g>hi)hi=g}
+const s=hi>lo?255/(hi-lo):1;for(let j=0;j<p.length;j+=4){const v=Math.max(0,Math.min(255,(p[j]-lo)*s));p[j]=p[j+1]=p[j+2]=v}
+x.putImageData(d,0,0);r(c.toDataURL("image/png"))};i.onerror=()=>r(src);i.src=src})}
+const clean=t=>t.replace(/\|/g,"।").replace(/[ \t]+\n/g,"\n").replace(/\n{3,}/g,"\n\n").trim();
+async function mkWorker(st){const lg=["ben","eng"],lf=m=>{if(m.status&&m.progress!==undefined)st.textContent="⏳ "+m.status+" "+Math.round(m.progress*100)+"%"};let w;
+try{w=await Tesseract.createWorker(lg,1,{langPath:"https://tessdata.projectnaptha.com/4.0.0_best",logger:lf})}catch(e){w=await Tesseract.createWorker(lg,1,{logger:lf})}
+try{await w.setParameters({tessedit_pageseg_mode:"6",preserve_interword_spaces:"1"})}catch(e){}return w}
+async function ocrCore(list,st){st.textContent="⏳ Loading the text reader (first time it downloads Bangla data, so you need internet)…";await loadTess();const w=await mkWorker(st);let out="";
+for(let i=0;i<list.length;i++){st.textContent="⏳ Preparing and reading image "+(i+1)+" of "+list.length+"…";const r=await w.recognize(await ocrPrep(list[i]));out+=(out?"\n":"")+clean(r.data.text)}
+await w.terminate();return out.trim()}
+async function xtOCR(){const st=$("xst");if(!AT.length)return alert("Attach a photo or PDF first (Upload, Camera or Paste image).");
+try{const out=await ocrCore(AT.map(a=>a.h||a.d),st);if(out){const x=$("xt");x.value=(x.value?x.value+"\n":"")+out}st.textContent=out?"✅ Text extracted. Bangla reading is not perfect, so check and fix the text, then press “Make question”.":"No text found. Try a clearer, straighter photo with good light."}
+catch(e){st.textContent="⚠️ Couldn't read the images. Check your internet connection (needed the first time) and try again."}}
+async function ocrRun(list,ta,st){try{const out=await ocrCore(list,st);if(out)ta.value=(ta.value?ta.value+"\n":"")+out;return out}catch(x){return ""}}
 try{const t=localStorage.getItem("th");if(t)document.documentElement.dataset.theme=t}catch(e){}
 function theme(){const r=document.documentElement,c=r.dataset.theme||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"),n=c=="dark"?"light":"dark";r.dataset.theme=n;try{localStorage.setItem("th",n)}catch(e){}}
 </script>
